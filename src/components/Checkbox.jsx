@@ -1,9 +1,18 @@
 export default function Checkbox({ label, on, onToggle, children }) {
+  const handleKeyDown = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
   return (
     <label
       className="ml-check"
       role="checkbox"
       aria-checked={on}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       onClick={(e) => {
         e.preventDefault();
         onToggle();

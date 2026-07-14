@@ -23,14 +23,42 @@ export const blankEntry = (n) => ({
 
 export const blankDeco = () => ({ stickers: [], strokes: [] });
 
+export function getBookColor(book) {
+  if (book.coverColor && book.coverColor !== "#E8A93B") return book.coverColor;
+  let h = 0;
+  const yr = String(book.year || "");
+  for (let i = 0; i < yr.length; i++) h = ((h << 5) - h + yr.charCodeAt(i)) | 0;
+  const SPINE_COLORS = [
+    "#7B2D3B", "#1B3F5C", "#2D5016", "#6B2D5B", "#B8860B",
+    "#4A3728", "#1A4A4A", "#8B2500", "#2F4F4F", "#CD853F",
+    "#556B2F", "#483D8B", "#800020", "#4B6F44", "#7B3F00",
+    "#36454F", "#5C3D2E", "#2D4A3E", "#6B4423", "#3B3F00"
+  ];
+  return SPINE_COLORS[Math.abs(h) % SPINE_COLORS.length];
+}
+
 export const blankBook = (year) => ({
   year: String(year),
   name: "",
-  coverColor: "#E8A93B",
+  coverColor: getBookColor({ year }),
   entries: [],
   watchlist: [],
   deco: {},
 });
+
+export function parseRating(val) {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  const num = parseFloat(val);
+  if (!isNaN(num)) return num;
+  let rating = 0;
+  for (let i = 0; i < val.length; i++) {
+    const char = val[i];
+    if (char === "★") rating += 1;
+    else if (char === "½") rating += 0.5;
+  }
+  return rating;
+}
 
 export function fmtDate(raw) {
   if (!raw) return "";
