@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Routes, Route, useNavigate, useParams } from "react-router-dom";
-import Papa from "papaparse";
 import Shelf from "./components/Shelf.jsx";
 import BookViewer from "./components/BookViewer.jsx";
 import {
@@ -11,6 +10,8 @@ import {
   fmtDate,
   computeFirstWatch,
   migrateEntry,
+  getBookColor,
+  parseRating,
 } from "./lib/models.js";
 
 export default function App() {
@@ -25,7 +26,15 @@ export default function App() {
     if (d && d.books) {
       const migrated = {};
       for (const [yr, book] of Object.entries(d.books)) {
-        migrated[yr] = { ...book, entries: (book.entries || []).map(migrateEntry) };
+        let coverColor = book.coverColor;
+        if (!coverColor || coverColor === "#E8A93B") {
+          coverColor = getBookColor({ year: yr });
+        }
+        migrated[yr] = {
+          ...book,
+          coverColor,
+          entries: (book.entries || []).map(migrateEntry),
+        };
       }
       setBooks(computeFirstWatch(migrated));
     }
@@ -52,52 +61,45 @@ export default function App() {
     flash(`Started book ${yr}`);
   };
 
-  const importCsv = (file) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => {
-        const rows = res.data;
-        const byYear = {};
-        rows.forEach((r) => {
-          const watched = r["Watched Date"] || r["Date"] || "";
-          const d = new Date(watched);
-          const yr = isNaN(d.getTime()) ? "Undated" : String(d.getFullYear());
-          (byYear[yr] = byYear[yr] || []).push({ r, watched });
-        });
-        setBooks((prev) => {
-          const next = { ...prev };
-          Object.keys(byYear).forEach((yr) => {
-            const book = next[yr]
-              ? { ...next[yr], entries: [...next[yr].entries] }
-              : blankBook(yr);
-            const sorted = byYear[yr].sort(
-              (a, b) => new Date(a.watched) - new Date(b.watched),
-            );
-            sorted.forEach(({ r, watched }) => {
-              const rating = parseFloat(r["Rating"]);
-              book.entries.push({
-                ...blankEntry(book.entries.length + 1),
-                movie: r["Name"] || "",
-                year: r["Year"] || "",
-                dateWatched: fmtDate(watched),
-                director: r["Director"] || "",
-                rating: isNaN(rating) ? 0 : Math.max(0, Math.min(5, rating)),
-                aspects: r["Aspect Ratio"] ? [r["Aspect Ratio"]] : [],
-              });
+
+
+  const exportJson = () => {
+    try {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ books }));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `movie-log-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      flash("Exported backup JSON!");
+    } catch {
+      flash("Could not export backup JSON.");
+    }
+  };
+
+  const importJson = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data && data.books) {
+          setBooks((prev) => {
+            const next = { ...prev };
+            Object.keys(data.books).forEach((yr) => {
+              next[yr] = data.books[yr];
             });
-            book.entries = book.entries.map((e, i) => ({ ...e, n: i + 1 }));
-            next[yr] = book;
+            return computeFirstWatch(next);
           });
-          return computeFirstWatch(next);
-        });
-        flash(
-          `Imported ${rows.length} film${rows.length === 1 ? "" : "s"} across ${Object.keys(byYear).length} book${Object.keys(byYear).length === 1 ? "" : "s"}`,
-        );
-      },
-      error: () =>
-        flash("Could not read that CSV — is it a Letterboxd diary export?"),
-    });
+          flash("Imported backup JSON successfully!");
+        } else {
+          flash("Invalid file format.");
+        }
+      } catch {
+        flash("Could not parse JSON file.");
+      }
+    };
+    reader.readAsText(file);
   };
 
   const updateBook = useCallback((year, newBook) => {
@@ -113,8 +115,9 @@ export default function App() {
             <Shelf
               books={books}
               onOpen={(y) => navigate(`/book/${y}`)}
-              onImport={importCsv}
               onAddYear={addYear}
+              onExportJson={exportJson}
+              onImportJson={importJson}
               toast={toast}
             />
           }

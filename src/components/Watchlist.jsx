@@ -22,6 +22,13 @@ export default function Watchlist({ year, list, onChange }) {
             className="ml-wl-check"
             role="checkbox"
             aria-checked={r.checked}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === " " || e.key === "Enter") {
+                e.preventDefault();
+                upd(r.id, { checked: !r.checked });
+              }
+            }}
             onClick={() => upd(r.id, { checked: !r.checked })}
             style={{ cursor: "pointer" }}
           >

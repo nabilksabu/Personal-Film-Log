@@ -39,7 +39,8 @@ function SingleStar({ index, value, size, readOnly, onChange }) {
     const rect = ref.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const isLeftHalf = x < rect.width / 2;
-    onChange(isLeftHalf ? index + 0.5 : index + 1);
+    const clickedVal = isLeftHalf ? index + 0.5 : index + 1;
+    onChange(value === clickedVal ? 0 : clickedVal);
   };
 
   const gradientId = `half-${index}`;

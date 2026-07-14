@@ -1,5 +1,5 @@
-import { useRef, useCallback } from "react";
-import { Plus, Upload } from "lucide-react";
+import { useRef, useCallback, useState, useEffect } from "react";
+import { Plus, Upload, Download, Shield } from "lucide-react";
 import StarRating from "./StarRating.jsx";
 import { fmtDate, blankBook } from "../lib/models.js";
 import { SPINE_COLORS } from "../lib/constants.js";
@@ -11,12 +11,29 @@ function hashYear(year) {
   return Math.abs(h);
 }
 
-export default function Shelf({ books, onOpen, onImport, onAddYear, toast }) {
-  const fileRef = useRef(null);
+export default function Shelf({ books, onOpen, onAddYear, onExportJson, onImportJson, toast }) {
+  const jsonFileRef = useRef(null);
   const spineRefs = useRef({});
   const years = Object.keys(books).sort((a, b) => Number(b) - Number(a));
   const allEntries = years.flatMap((y) => books[y].entries.map((e) => ({ ...e, _year: y })));
   const totalFilms = allEntries.length;
+
+  const [isPersisted, setIsPersisted] = useState(true);
+
+  useEffect(() => {
+    if (navigator.storage && navigator.storage.persisted) {
+      navigator.storage.persisted().then((persistent) => {
+        setIsPersisted(persistent);
+      });
+    }
+  }, []);
+
+  const requestPersistence = async () => {
+    if (navigator.storage && navigator.storage.persist) {
+      const granted = await navigator.storage.persist();
+      setIsPersisted(granted);
+    }
+  };
 
   const last = allEntries
     .filter((e) => e.movie).slice()
@@ -48,20 +65,47 @@ export default function Shelf({ books, onOpen, onImport, onAddYear, toast }) {
           <div className="ml-eyebrow">Personal Film Journal</div>
           <div className="ml-wordmark">Movie&nbsp;Log</div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button className="ml-btn" onClick={onAddYear} type="button"><Plus size={13} /> New book</button>
-          <button
-            className="ml-btn-import"
-            onClick={() => fileRef.current.click()}
-            type="button"
-            title="Import a Letterboxd diary CSV"
-          >
-            <Upload size={12} /> Import CSV
-          </button>
-          <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }}
-            onChange={(e) => { if (e.target.files[0]) onImport(e.target.files[0]); e.target.value = ""; }} />
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <button className="ml-btn ml-btn--fill" onClick={onAddYear} type="button"><Plus size={13} /> New book</button>
+          <button className="ml-btn" onClick={onExportJson} type="button" title="Export Backup JSON"><Download size={12} /> Export JSON</button>
+          <button className="ml-btn" onClick={() => jsonFileRef.current.click()} type="button" title="Import Backup JSON"><Upload size={12} /> Import JSON</button>
+          <input ref={jsonFileRef} type="file" accept=".json" style={{ display: "none" }}
+            onChange={(e) => { if (e.target.files[0]) onImportJson(e.target.files[0]); e.target.value = ""; }} />
         </div>
       </div>
+
+      {!isPersisted && (
+        <div className="ml-persist-banner" style={{
+          background: "var(--cream)",
+          border: "1px solid var(--line)",
+          borderRadius: 6,
+          padding: "14px 18px",
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+          flexWrap: "wrap"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 24 }}>🛡️</span>
+            <div style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.4, maxWidth: 650 }}>
+              <strong>Browser Storage protection:</strong> Your film journal is currently marked as temporary. To prevent the browser from automatically deleting your logs when disk space is low, enable storage guard protection.
+            </div>
+          </div>
+          <button className="ml-btn ml-btn--fill" onClick={requestPersistence} style={{
+            background: "var(--mustard)",
+            color: "var(--ink)",
+            borderColor: "var(--mustard)",
+            fontSize: 10.5,
+            padding: "6px 12px",
+            whiteSpace: "nowrap"
+          }} type="button">
+            Enable Protection
+          </button>
+        </div>
+      )}
 
       {/* ── Last-logged ticket stub ── */}
       {last && (
@@ -151,6 +195,7 @@ export default function Shelf({ books, onOpen, onImport, onAddYear, toast }) {
                     rgba(255,255,255,0.07) 44%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 56%,
                     transparent 70%, rgba(0,0,0,0.05) 85%, rgba(0,0,0,0.20) 100%), ${spineColor}`,
                   transform: `rotate(${tilt}deg)`, transformOrigin: "bottom center",
+                  "--tilt": `${tilt}deg`,
                 }}
                 onClick={() => onOpen(y)}
                 onKeyDown={(e) => handleSpineKey(e, y)}

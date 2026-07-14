@@ -407,7 +407,7 @@ body {
 }
 
 .ml-spine:hover {
-  transform: translateY(-22px) scale(1.04) !important;
+  transform: translateY(-22px) rotate(var(--tilt, 0deg)) scale(1.04) !important;
   filter: brightness(1.1);
   z-index: 5;
   box-shadow:
@@ -679,7 +679,20 @@ body {
     var(--page);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
 }
-.ml-leaf--single { max-width: 540px; margin: 0 auto; }
+.ml-leaf-l {
+  border-radius: 6px 0 0 6px !important;
+  box-shadow: -12px 12px 28px rgba(0, 0, 0, 0.22) !important;
+}
+.ml-leaf-r {
+  border-radius: 0 6px 6px 0 !important;
+  box-shadow: 12px 12px 28px rgba(0, 0, 0, 0.22) !important;
+}
+.ml-leaf--single {
+  max-width: 540px;
+  margin: 0 auto;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35) !important;
+}
 
 /* ── Cover — cloth/leather texture ── */
 .ml-cover {
