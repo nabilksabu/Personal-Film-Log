@@ -4,6 +4,8 @@ A beautiful, physical-book styled personal film journal. Log every movie you wat
 
 Designed with a premium skeletal aesthetic featuring smooth 3D animations for desktop and a swipe-friendly card UI for mobile.
 
+**Live Demo:** [dakuyonsfilmlog.vercel.app](https://dakuyonsfilmlog.vercel.app/)
+
 ---
 
 ## Features
