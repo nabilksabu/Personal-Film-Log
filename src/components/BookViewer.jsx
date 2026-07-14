@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import {
   ArrowLeft, Plus, ChevronLeft, ChevronRight,
-  Sticker, Move, Pencil, Eraser, Trash2,
+  Sticker, Move, Pencil, Eraser, Trash2, Image,
 } from "lucide-react";
 import EntryCard from "./EntryCard.jsx";
 import Watchlist from "./Watchlist.jsx";
@@ -40,6 +40,76 @@ export default function BookViewer({ book, onClose, onUpdate }) {
   const [picked, setPicked] = useState(STICKERS[0]);
   const [clearKey, setClearKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+
+  const flash = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg((curr) => curr === msg ? "" : curr), 3000);
+  };
+
+  const stickerUploadRef = useRef(null);
+
+  const handleStickerUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        const maxDim = 180;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+
+        const r1 = data[0], g1 = data[1], b1 = data[2], a1 = data[3];
+        const isCornerSolid = a1 > 200;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i+1];
+          const b = data[i+2];
+          const a = data[i+3];
+
+          const isNearWhite = r > 238 && g > 238 && b > 238;
+          const isCornerMatch = isCornerSolid && 
+            Math.abs(r - r1) < 35 && 
+            Math.abs(g - g1) < 35 && 
+            Math.abs(b - b1) < 35;
+
+          if (isNearWhite || isCornerMatch) {
+            data[i+3] = 0;
+          }
+        }
+        
+        ctx.putImageData(imgData, 0, 0);
+        const croppedDataUrl = canvas.toDataURL("image/png");
+        setPicked(croppedDataUrl);
+        setTool("sticker");
+        flash("Custom sticker loaded! Click page to place.");
+      };
+      img.src = readerEvent.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const stageRef = useRef(null);
   const dragX = useMotionValue(0);
@@ -368,7 +438,6 @@ export default function BookViewer({ book, onClose, onUpdate }) {
     setFlipDir(dir);
     setPageIdx(nextIdx);
     setIsFlipping(true);
-    setTimeout(() => { setIsFlipping(false); setExitSnapshot(null); }, 650);
   }, [isFlipping, idx, activePages]);
 
   /* ── Keyboard navigation & Global shortcuts ── */
@@ -492,11 +561,11 @@ export default function BookViewer({ book, onClose, onUpdate }) {
 
           {/* Current page content — with touch/swipe wrapper */}
           <motion.div
-            drag="x"
+            drag={isMobile && !decorate ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.15}
             onDragEnd={handleDragEnd}
-            style={{ x: dragX, touchAction: "pan-y" }}
+            style={{ x: dragX, touchAction: isMobile && !decorate ? "pan-y" : "auto" }}
           >
             <div className="ml-spread" style={{ position: "relative" }}>
               
@@ -548,31 +617,75 @@ export default function BookViewer({ book, onClose, onUpdate }) {
                     }}
                     initial={{ rotateY: 0 }}
                     animate={{ rotateY: flipDir > 0 ? -180 : 180 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+                    onAnimationComplete={() => {
+                      setIsFlipping(false);
+                      setExitSnapshot(null);
+                    }}
                   >
                     {/* Front face (old page facing screen) */}
-                    <div style={{
-                      position: "absolute",
-                      inset: 0,
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      zIndex: 2,
-                      transform: "rotateY(0deg)",
-                    }}>
+                    <motion.div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                        zIndex: 2,
+                        transform: "rotateY(0deg)",
+                      }}
+                      animate={{ opacity: [1, 1, 0, 0] }}
+                      transition={{ duration: 0.6, times: [0, 0.49, 0.5, 1], ease: "linear" }}
+                    >
                       {renderLeaf(flipDir > 0 ? exitSnapshot.right : exitSnapshot.left, flipDir > 0 ? "right" : "left")}
-                    </div>
+
+                      {/* Paper bend gradient shadow */}
+                      <motion.div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: flipDir > 0 
+                            ? "linear-gradient(to right, rgba(0,0,0,0.15), transparent)"
+                            : "linear-gradient(to left, rgba(0,0,0,0.15), transparent)",
+                          pointerEvents: "none",
+                          borderRadius: flipDir > 0 ? "0 6px 6px 0" : "6px 0 0 6px",
+                        }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 0.35, 0] }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                      />
+                    </motion.div>
 
                     {/* Back face (new page facing back) */}
-                    <div style={{
-                      position: "absolute",
-                      inset: 0,
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      zIndex: 1,
-                      transform: flipDir > 0 ? "rotateY(180deg)" : "rotateY(-180deg)",
-                    }}>
+                    <motion.div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                        zIndex: 1,
+                        transform: flipDir > 0 ? "rotateY(180deg)" : "rotateY(-180deg)",
+                      }}
+                      animate={{ opacity: [0, 0, 1, 1] }}
+                      transition={{ duration: 0.6, times: [0, 0.49, 0.5, 1], ease: "linear" }}
+                    >
                       {renderLeaf(flipDir > 0 ? cur.left : cur.right, flipDir > 0 ? "left" : "right")}
-                    </div>
+
+                      {/* Paper bend landing shadow */}
+                      <motion.div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: flipDir > 0 
+                            ? "linear-gradient(to left, rgba(0,0,0,0.15), transparent)"
+                            : "linear-gradient(to right, rgba(0,0,0,0.15), transparent)",
+                          pointerEvents: "none",
+                          borderRadius: flipDir > 0 ? "6px 0 0 6px" : "0 6px 6px 0",
+                        }}
+                        initial={{ opacity: 0.35 }}
+                        animate={{ opacity: [0, 0.35, 0] }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                      />
+                    </motion.div>
                   </motion.div>
                 </div>
               )}
@@ -676,6 +789,25 @@ export default function BookViewer({ book, onClose, onUpdate }) {
               <Trash2 size={11} /> clear ink
             </button>
             <span style={{ width: 1, height: 20, background: "#44444c" }} />
+            <input type="file" ref={stickerUploadRef} style={{ display: "none" }} accept="image/*" onChange={handleStickerUpload} />
+            <button className="ml-tray-tool" onClick={() => stickerUploadRef.current.click()} type="button" title="Upload Custom Sticker">
+              <Image size={11} /> upload image
+            </button>
+            {picked && (picked.startsWith("data:image/") || picked.startsWith("blob:") || picked.startsWith("http")) && (
+              <span className="ml-tray-em"
+                style={{ 
+                  outline: "2px solid var(--mustard)",
+                  width: 22, height: 22, 
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: 2, background: "rgba(255,255,255,0.08)", borderRadius: 3
+                }}
+                onClick={() => setTool("sticker")}
+                title="Select uploaded custom sticker"
+              >
+                <img src={picked} alt="custom preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+              </span>
+            )}
+            <span style={{ width: 1, height: 20, background: "#44444c" }} />
             {STICKERS.map((em) => (
               <span key={em} className="ml-tray-em"
                 style={{ outline: picked === em ? "2px solid var(--mustard)" : "none" }}
@@ -694,6 +826,9 @@ export default function BookViewer({ book, onClose, onUpdate }) {
         <button className="ml-btn" style={{ borderColor: "#55555d", color: "#edebe4" }}
           onClick={() => go(1)} type="button"><ChevronRight size={13} /></button>
       </div>
+      {toastMsg && (
+        <div className="ml-toast">{toastMsg}</div>
+      )}
     </div>
   );
 }

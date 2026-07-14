@@ -95,8 +95,16 @@ export default function DecorateLayer({ deco, onChange, active, tool, color, wid
       </div>
 
       {/* Stickers */}
-      {stickers.map((s) =>
-        active && tool === "move" ? (
+      {/* Stickers */}
+      {stickers.map((s) => {
+        const isImg = s.emoji && (s.emoji.startsWith("data:image/") || s.emoji.startsWith("blob:") || s.emoji.startsWith("http"));
+        const content = isImg ? (
+          <img src={s.emoji} alt="sticker" style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none", userSelect: "none" }} />
+        ) : (
+          s.emoji
+        );
+
+        return active && tool === "move" ? (
           <Rnd
             key={s.id}
             size={{ width: s.w, height: s.h }}
@@ -111,12 +119,19 @@ export default function DecorateLayer({ deco, onChange, active, tool, color, wid
           >
             <div style={{
               transform: `rotate(${s.rot}deg)`,
-              fontSize: s.h * 0.72, lineHeight: 1,
+              width: "100%", height: "100%",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: isImg ? undefined : s.h * 0.72, lineHeight: 1,
               filter: "drop-shadow(1px 3px 4px rgba(0,0,0,0.25))",
-            }}>{s.emoji}</div>
-            <button className="ml-sticker-x" onClick={() => delSticker(s.id)} title="Remove"><X size={11} /></button>
+            }}>{content}</div>
+            <button className="ml-sticker-x" 
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); delSticker(s.id); }} title="Remove"><X size={11} /></button>
             <button className="ml-sticker-x" style={{ left: -9, right: "auto", background: "#3B6FE8" }}
-              onClick={() => updSticker(s.id, { rot: (s.rot + 15) % 360 })} title="Rotate"><RotateCw size={10} /></button>
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); updSticker(s.id, { rot: (s.rot + 15) % 360 }); }} title="Rotate"><RotateCw size={10} /></button>
           </Rnd>
         ) : s.isNew ? (
           /* Sticker with "peel and place" landing animation */
@@ -132,20 +147,21 @@ export default function DecorateLayer({ deco, onChange, active, tool, color, wid
             style={{
               position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h,
               display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none",
-              fontSize: s.h * 0.72, lineHeight: 1,
+              fontSize: isImg ? undefined : s.h * 0.72, lineHeight: 1,
               filter: "drop-shadow(1px 3px 4px rgba(0,0,0,0.25))",
             }}
-          >{s.emoji}</motion.div>
+          >{content}</motion.div>
         ) : (
           /* Static sticker (no animation) */
           <div key={s.id} style={{
             position: "absolute", left: s.x, top: s.y, width: s.w, height: s.h,
             display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none",
-            transform: `rotate(${s.rot}deg)`, fontSize: s.h * 0.72, lineHeight: 1,
+            transform: `rotate(${s.rot}deg)`,
+            fontSize: isImg ? undefined : s.h * 0.72, lineHeight: 1,
             filter: "drop-shadow(1px 3px 4px rgba(0,0,0,0.25))",
-          }}>{s.emoji}</div>
-        )
-      )}
+          }}>{content}</div>
+        );
+      })}
     </div>
   );
 }
