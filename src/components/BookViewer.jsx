@@ -139,7 +139,15 @@ export default function BookViewer({ book, onClose, onUpdate }) {
   /* ── Render single page leaf ── */
   const renderLeaf = (leaf, side) => {
     if (!leaf) {
-      return <div className="ml-leaf-empty" style={{ minHeight: 660, background: "transparent" }} />;
+      const isClosedBook = cur.id === "cover" || cur.id === "back";
+      if (isClosedBook) {
+        return <div className="ml-leaf-empty" style={{ minHeight: 660, background: "transparent" }} />;
+      }
+      return (
+        <Leaf side={side}>
+          <div style={{ minHeight: 660 }} />
+        </Leaf>
+      );
     }
 
     const sideClass = side === "left" ? " ml-leaf-l" : side === "right" ? " ml-leaf-r" : " ml-leaf-single";
