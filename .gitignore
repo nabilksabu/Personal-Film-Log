@@ -24,3 +24,6 @@ pnpm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local Antigravity session log
+antigravity.md
