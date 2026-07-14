@@ -69,7 +69,7 @@ export default function Shelf({ books, onOpen, onAddYear, onExportJson, onImport
           <button className="ml-btn ml-btn--fill" onClick={onAddYear} type="button"><Plus size={13} /> New book</button>
           <button className="ml-btn" onClick={onExportJson} type="button" title="Export Backup JSON"><Download size={12} /> Export JSON</button>
           <button className="ml-btn" onClick={() => jsonFileRef.current.click()} type="button" title="Import Backup JSON"><Upload size={12} /> Import JSON</button>
-          <input ref={jsonFileRef} type="file" accept=".json" style={{ display: "none" }}
+          <input ref={jsonFileRef} type="file" accept="application/json,.json" style={{ display: "none" }}
             onChange={(e) => { if (e.target.files[0]) onImportJson(e.target.files[0]); e.target.value = ""; }} />
         </div>
       </div>

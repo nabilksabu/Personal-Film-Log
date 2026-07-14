@@ -65,13 +65,16 @@ export default function App() {
 
   const exportJson = () => {
     try {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ books }));
+      const jsonString = JSON.stringify({ books }, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
       const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("href", url);
       downloadAnchor.setAttribute("download", `movie-log-backup-${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
+      URL.revokeObjectURL(url);
       flash("Exported backup JSON!");
     } catch {
       flash("Could not export backup JSON.");
