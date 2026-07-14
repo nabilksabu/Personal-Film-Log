@@ -1,77 +1,126 @@
 # Movie Log
 
-A personal film journal — log every movie you watch, organized into yearly "books" on a virtual shelf. Rate films, track first watches vs. rewatches, note formats and aspect ratios, keep a watchlist, and decorate book covers with stickers and doodles.
+A beautiful, physical-book styled personal film journal. Log every movie you watch, organized into yearly "books" on a virtual wood-grain shelf. Rate films, track rewatches, note formats, customize book cover colors, draw or place stickers on pages, and keep a yearly watchlist.
+
+Designed with a premium skeletal aesthetic featuring smooth 3D animations for desktop and a swipe-friendly card UI for mobile.
+
+---
 
 ## Features
 
-- **Shelf view** — yearly books displayed as book spines with varied colors, heights, and tilt for a hand-arranged look, resting on a wood-grain shelf with knot-mark texture
-- **Last-logged ticket stub** — a torn-edge, stamped ticket highlighting the most recently logged film
-- **Book viewer** — page-flip animation between cover, title page, entry spreads, watchlist, and back cover
-- **Entry cards** — movie title, year, date watched, director, star rating (half-star precision), aspect ratio (multi-select), format tags (IMAX, 70MM, Dolby Vision, etc.), and checkboxes for in-theater/at-home/alone/first-watch/rewatch
-- **Auto first-watch detection** — the first time you log a movie it's marked "First Watch"; subsequent entries for the same title are automatically marked "Rewatch"
-- **Decorate layer** — freehand sketching and draggable/resizable emoji stickers on cover, title, and back pages
-- **Letterboxd import** — import a Letterboxd diary CSV export directly into yearly books
-- **Local persistence** — everything is saved to `localStorage`, no backend required
+- **Virtual Shelf View** — Books are displayed as realistic spines with deterministic heights, width, colors, and tilts. Includes a **Last-Logged Ticket Stub** showing your most recent watch.
+- **Cinematic Book Opening** — Experience a smooth 3D cover lifting and swinging open animation when opening any journal.
+- **Flawless 3D Page Turns (PC)** — A mathematically correct double-sided page leaf rotation around the center spine. Unlocks realistic depth shadow curls and paper creases.
+- **Mobile-Exclusive Card UI** — Seamlessly adapts to mobile viewports. On phones, it renders single centered cards with horizontal swipe transitions and touch-friendly targets.
+- **Statistics Summary** — The book title page displays real-time statistics (total movies, average rating, theater vs home counts, and rewatch metrics).
+- **Decorate & Doodle** — Canvas drawing overlay with freehand sketching and draggable/resizable emoji stickers on the cover, title, and back pages.
+- **JSON Backup & Import** — Complete data backups in JSON format to save, share, or download your journal so you never lose your logs.
+- **Browser Storage Protection Guard** — Requests browser storage persistence (`navigator.storage.persist()`) through a warning banner, preventing the browser from wiping your local storage when disk space is low.
+- **Keyboard Navigation & Global Shortcuts** — Full control via keybinds on PC (deactivates when typing in text inputs).
+
+---
+
+## Keyboard Shortcuts (PC)
+
+When viewing a book:
+* `ArrowRight` / `ArrowLeft` — Turn pages forward / backward.
+* `Escape` — Close the book and return to the main shelf.
+* `N` — Instantly create a new movie entry.
+* `D` — Toggle the stickers and drawing Decorate tray.
+* `Delete` or `Backspace` — Prompt to delete the current film log (on PC, safely asks which page's entry you wish to remove with dual-confirmation).
+
+---
 
 ## Getting Started
 
-```bash
-npm install
-npm run dev
-```
+### Prerequisites
 
-Then open the printed local URL in your browser.
+Ensure you have [Node.js](https://nodejs.org/) installed.
 
-### Other commands
+### Setup and Running Locally
 
-```bash
-npm run build     # production build to dist/
-npm run preview   # preview the production build locally
-```
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Open the App:**
+   Open the local address printed in the terminal (usually `http://localhost:5173`) in your web browser.
+
+### Other Commands
+
+* Build production bundle (outputs to `dist/`):
+  ```bash
+  npm run build
+  ```
+* Preview the production build locally:
+  ```bash
+  npm run preview
+  ```
+
+---
 
 ## Tech Stack
 
-- [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
-- [react-router-dom](https://reactrouter.com/) (hash-based routing, so it works without a server)
-- [framer-motion](https://www.framer.com/motion/) for page-flip and cover-open animations
-- [react-sketch-canvas](https://www.npmjs.com/package/react-sketch-canvas) + [react-rnd](https://www.npmjs.com/package/react-rnd) for the decorate layer
-- [papaparse](https://www.papaparse.com/) for CSV import
-- [lucide-react](https://lucide.dev/) for icons
-- Vanilla CSS (no Tailwind) — styles live in `src/index.css`
-- Fonts: [Playfair Display](https://fonts.google.com/specimen/Playfair+Display) (serif headings), [Caveat](https://fonts.google.com/specimen/Caveat) (handwriting accents), [Space Mono](https://fonts.google.com/specimen/Space+Mono) (labels/mono), [Archivo](https://fonts.google.com/specimen/Archivo) (body)
+* **React 18** + **Vite**
+* **React Router Dom 6** (using HashRouter for serverless deployment)
+* **Framer Motion** for 3D page flips, cover-lifts, and mobile slide animations
+* **React Sketch Canvas** + **React Rnd** for doodles and sticker positioning
+* **Lucide React** for premium vector iconography
+* **CSS** (Vanilla CSS for maximum control and custom typography)
+* **Fonts:** Playfair Display (Serif headers), Caveat (Handwriting doodle details), Space Mono (Monospace statistics and labels), Archivo (Sans-serif body)
+
+---
 
 ## Project Structure
 
 ```
 src/
-  main.jsx                  entry point (React root + HashRouter)
-  App.jsx                   routes, book state, persistence, CSV import
-  index.css                 all styles
+  main.jsx                  Entry point (wraps App in HashRouter)
+  App.jsx                   Routes, local storage persistence, JSON import/export
+  index.css                 Design tokens, 3D leaf folds, desk styling, responsiveness
   lib/
-    constants.js             design tokens, option lists, spine color palette
-    models.js                data helpers, localStorage load/save, first-watch logic
+    constants.js            Design palette, HSL values, default stickers, and colors
+    models.js               blankEntry/blankBook models, rewatch detection, storage helpers
   components/
-    Shelf.jsx                home view — shelf of book spines, last-logged ticket, top favorites
-    BookViewer.jsx           full book: cover, title, entries, watchlist, back — with page-flip
-    EntryCard.jsx             single movie entry, with auto-shrinking title field
-    StarRating.jsx           half-star precision rating widget
-    Checkbox.jsx              reusable labeled checkbox
-    Chips.jsx                 single/multi-select chip row (aspect ratio, format)
-    Watchlist.jsx              "movies to watch" list for a book
-    DecorateLayer.jsx          sketch canvas + draggable stickers overlay
+    Shelf.jsx               Main shelf layout, favorites, ticket stub, and storage guard
+    BookViewer.jsx          Double-page PC spread / Single-page Mobile card routing & flip loops
+    EntryCard.jsx           Diary log input fields, multi-aspect-chips, and rewatch stamps
+    StarRating.jsx          Interactive half-star rating widget (click again to toggle to 0)
+    Checkbox.jsx            Accessible keyboard checkbox
+    Chips.jsx               Format and aspect ratios tag selectors
+    Watchlist.jsx           Togglable yearly watchlist
+    DecorateLayer.jsx       Framer drag stickers and React Sketch canvas wrapper
 ```
+
+---
 
 ## Data Model
 
-Each book (keyed by year) contains:
+Each year book contains:
+* `year` (string)
+* `name` (string, owner's name)
+* `coverColor` (hex color)
+* `entries[]` — movie log entries (movie title, director, date watched, rating, aspects, formats, notes, tags)
+* `watchlist[]` — watch targets for the year
+* `deco` — doodles and sticker locations
 
-- `year`, `name`, `coverColor`
-- `entries[]` — individual movie logs (title, rating, dates, formats, aspect ratios, watch flags, notes)
-- `watchlist[]` — planned movies for that year
-- `deco` — per-page decoration data (stickers + ink strokes) for cover/title/back
+All data is safely stored in the browser's persistent storage under the `movielog:v1` key.
 
-All data is stored under the `movielog:v1` key in `localStorage`.
+---
 
-## Importing from Letterboxd
+## Deployment
 
-Export your diary from Letterboxd as CSV, then use the **Import Letterboxd** button on the shelf. Entries are grouped into yearly books by watch date, and first-watch/rewatch status is derived automatically from repeated titles.
+Deploy directly to **Vercel** in seconds:
+```bash
+# Install and log in to Vercel CLI
+npx vercel login
+
+# Deploy production bundle
+npx vercel --prod
+```
